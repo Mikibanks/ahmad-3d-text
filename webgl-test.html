@@ -10,12 +10,8 @@
   const renderer = new THREE.WebGLRenderer({antialias:true});
   renderer.setSize(innerWidth, innerHeight);
   document.body.appendChild(renderer.domElement);
-
-  const geo = new THREE.BoxGeometry(1,1,1);
-  const mat = new THREE.MeshStandardMaterial({color: 0xffffff});
-  const mesh = new THREE.Mesh(geo, mat);
-  scene.add(mesh);
-  scene.add(new THREE.AmbientLight(0xffffff, 1));
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), new THREE.MeshStandardMaterial({color:0xffffff}));
+  scene.add(mesh); scene.add(new THREE.AmbientLight(0xffffff, 1));
   addEventListener('resize', ()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
   (function anim(){ requestAnimationFrame(anim); mesh.rotation.y+=0.01; renderer.render(scene,camera);})();
 </script>
