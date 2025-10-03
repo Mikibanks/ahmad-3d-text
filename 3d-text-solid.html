@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>3D Text (Solid BG)</title>
+  <style>
+    html, body { height:100%; margin:0; background:#0e0f11; } /* dark bg */
+    canvas { display:block; }
+  </style>
+</head>
+<body>
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.164.1/build/three.module.js';
+    import { FontLoader } from 'https://unpkg.com/three@0.164.1/examples/jsm/loaders/FontLoader.js';
+    import { TextGeometry } from 'https://unpkg.com/three@0.164.1/examples/jsm/geometries/TextGeometry.js';
+
+    // --- Settings you can tweak via URL: ?text=Ahmad%20Alnaimi&color=%23f7f5ef&size=1.2&depth=0.3
+    const p = new URLSearchParams(location.search);
+    const TEXT_STRING = p.get('text')  || 'Ahmad Alnaimi';
+    const TEXT_COLOR  = p.get('color') || '#f7f5ef';  // off-white
+    const SIZE        = parseFloat(p.get('size')  || '1.2');
+    const DEPTH       = parseFloat(p.get('depth') || '0.30');
+    const BEVEL       = (p.get('bevel') ?? 'true') === 'true';
+    const FONT_URL    = 'https://unpkg.com/three@0.164.1/examples/fonts/helvetiker_regular.typeface.json';
+
+    // Scene
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('#0e0f11'); // dark background
+
+    const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 100);
+    camera.position.set(0, 0.6, 3);
+
+    const renderer = new THREE.WebGLRenderer({ antialias:true });
+    renderer.setPixelRatio(Math.min(2, devicePixelRatio));
+    renderer.setSize(innerWidth, innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Lights
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x222233, 0.7));
+    const key = new THREE.DirectionalLight(0xffffff, 1.1); key.position.set(2.5, 4, 3); scene.add(key);
+    const rim = new THREE.DirectionalLight(0xffc0c0, 0.35); rim.position.set(-2, 2, -2); scene.add(rim);
+
+    // Text group (to rotate with mouse)
+    const group = new THREE.Group(); scene.add(group);
+
+    // Build text
+    new FontLoader().load(FONT_URL, (font) => {
+      const geo = new TextGeometry(TEXT_STRING, {
+        font, size: SIZE, height: DEPTH, curveSegments: 12,
+        bevelEnabled: BEVEL, bevelThickness: 0.04, bevelSize: 0.03, bevelSegments: 5
+      });
+      geo.computeBoundingBox(); geo.center();
+
+      const mat = new THREE.MeshPhysicalMaterial({
+        color: new THREE.Color(TEXT_COLOR),
+        roughness: 0.35, metalness: 0.0, reflectivity: 0.3, clearcoat: 0.25, clearcoatRoughness: 0.45
+      });
+
+      const mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+    });
+
+    // Mouse-follow rotation
+    const targetRot = { x:0, y:0 };
+    addEventListener('pointermove', (e) => {
+      const nx = (e.clientX / innerWidth) * 2 - 1;
+      const ny = (e.clientY / innerHeight) * 2 - 1;
+      targetRot.y = nx * 0.5;
+      targetRot.x = -ny * 0.4;
+    });
+
+    // Resize
+    addEventListener('resize', () => {
+      camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+
+    // Render loop
+    (function animate(){
+      requestAnimationFrame(animate);
+      group.rotation.x += (targetRot.x - group.rotation.x) * 0.08;
+      group.rotation.y += (targetRot.y - group.rotation.y) * 0.08;
+      renderer.render(scene, camera);
+    })();
+  </script>
+</body>
+</html>
