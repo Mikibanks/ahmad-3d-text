@@ -5,28 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>3D Text (Solid BG)</title>
   <style>
-    html, body { height:100%; margin:0; background:#0e0f11; } /* dark bg */
+    html, body { height:100%; margin:0; background:#0e0f11; }
     canvas { display:block; }
+    #msg { position:fixed; left:12px; bottom:12px; color:#ddd; background:rgba(0,0,0,.35); 
+           padding:6px 10px; border-radius:10px; font:12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
   </style>
 </head>
 <body>
+  <div id="msg">Loading…</div>
   <script type="module">
-    import * as THREE from 'https://unpkg.com/three@0.164.1/build/three.module.js';
-    import { FontLoader } from 'https://unpkg.com/three@0.164.1/examples/jsm/loaders/FontLoader.js';
-    import { TextGeometry } from 'https://unpkg.com/three@0.164.1/examples/jsm/geometries/TextGeometry.js';
+    import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js";
+    import { FontLoader } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/loaders/FontLoader.js";
+    import { TextGeometry } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/geometries/TextGeometry.js";
 
-    // --- Settings you can tweak via URL: ?text=Ahmad%20Alnaimi&color=%23f7f5ef&size=1.2&depth=0.3
     const p = new URLSearchParams(location.search);
     const TEXT_STRING = p.get('text')  || 'Ahmad Alnaimi';
-    const TEXT_COLOR  = p.get('color') || '#f7f5ef';  // off-white
+    const TEXT_COLOR  = p.get('color') || '#f7f5ef';
     const SIZE        = parseFloat(p.get('size')  || '1.2');
     const DEPTH       = parseFloat(p.get('depth') || '0.30');
     const BEVEL       = (p.get('bevel') ?? 'true') === 'true';
-    const FONT_URL    = 'https://unpkg.com/three@0.164.1/examples/fonts/helvetiker_regular.typeface.json';
+    const FONT_URL    = "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/fonts/helvetiker_regular.typeface.json";
+
+    const msg = document.getElementById('msg');
+    function say(t){ if(msg) msg.textContent = t; }
 
     // Scene
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#0e0f11'); // dark background
+    scene.background = new THREE.Color('#0e0f11');
 
     const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 100);
     camera.position.set(0, 0.6, 3);
@@ -41,7 +46,6 @@
     const key = new THREE.DirectionalLight(0xffffff, 1.1); key.position.set(2.5, 4, 3); scene.add(key);
     const rim = new THREE.DirectionalLight(0xffc0c0, 0.35); rim.position.set(-2, 2, -2); scene.add(rim);
 
-    // Text group (to rotate with mouse)
     const group = new THREE.Group(); scene.add(group);
 
     // Build text
@@ -59,15 +63,17 @@
 
       const mesh = new THREE.Mesh(geo, mat);
       group.add(mesh);
-    });
+      say(''); // clear message
+    },
+    (xhr)=>{ say('Loading font… ' + Math.round((xhr.loaded/xhr.total)*100 || 0) + '%'); },
+    (err)=>{ say('Font failed to load. Try refreshing.'); console.error(err); });
 
-    // Mouse-follow rotation
+    // Mouse-follow
     const targetRot = { x:0, y:0 };
     addEventListener('pointermove', (e) => {
       const nx = (e.clientX / innerWidth) * 2 - 1;
       const ny = (e.clientY / innerHeight) * 2 - 1;
-      targetRot.y = nx * 0.5;
-      targetRot.x = -ny * 0.4;
+      targetRot.y = nx * 0.5; targetRot.x = -ny * 0.4;
     });
 
     // Resize
