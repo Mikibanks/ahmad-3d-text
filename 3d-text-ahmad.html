@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>3D Text - Ahmad AlNaimi</title>
+  <style>
+    html, body { height: 100%; margin: 0; background: #0e0f11; }
+    #info {
+      position: fixed; left: 12px; bottom: 12px; font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: #c9c9c9; opacity: .9; background: rgba(0,0,0,.35); padding: 8px 10px; border-radius: 10px;
+    }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <div id="info">Drag to orbit • Scroll to zoom</div>
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.164.1/build/three.module.js';
+    import { OrbitControls } from 'https://unpkg.com/three@0.164.1/examples/jsm/controls/OrbitControls.js';
+    import { FontLoader } from 'https://unpkg.com/three@0.164.1/examples/jsm/loaders/FontLoader.js';
+    import { TextGeometry } from 'https://unpkg.com/three@0.164.1/examples/jsm/geometries/TextGeometry.js';
+
+    // --- Config you can tweak ---
+    const TEXT_STRING = new URLSearchParams(location.search).get('text') || 'Ahmad AlNaimi';
+    const TEXT_COLOR  = new URLSearchParams(location.search).get('color') || '#f5f5f0'; // off-white
+    const BG_COLOR    = new URLSearchParams(location.search).get('bg') || '#0e0f11';
+    const FONT_URL    = 'https://unpkg.com/three@0.164.1/examples/fonts/helvetiker_regular.typeface.json';
+    const SIZE        = parseFloat(new URLSearchParams(location.search).get('size')) || 1.0; // text size
+    const DEPTH       = parseFloat(new URLSearchParams(location.search).get('depth')) || 0.3; // extrusion depth
+    const BEVEL       = (new URLSearchParams(location.search).get('bevel') ?? 'true') === 'true';
+
+    // --- Scene ---
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(BG_COLOR);
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0.8, 0.9, 3.2);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.shadowMap.enabled = true;
+    document.body.appendChild(renderer.domElement);
+
+    // Controls
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+
+    // Lights
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x222233, 0.7);
+    scene.add(hemi);
+
+    const key = new THREE.DirectionalLight(0xffffff, 1.0);
+    key.position.set(2, 4, 3);
+    key.castShadow = true;
+    key.shadow.mapSize.set(2048, 2048);
+    scene.add(key);
+
+    const fill = new THREE.DirectionalLight(0x88aaff, 0.35);
+    fill.position.set(-3, 1, -2);
+    scene.add(fill);
+
+    const rim = new THREE.DirectionalLight(0xffaacc, 0.4);
+    rim.position.set(-1, 3, 4);
+    scene.add(rim);
+
+    // Ground (soft shadow cue)
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(20, 20),
+      new THREE.ShadowMaterial({ opacity: 0.18 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -0.2;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    // Load font & build text
+    new FontLoader().load(FONT_URL, (font) => {
+      const geo = new TextGeometry(TEXT_STRING, {
+        font,
+        size: SIZE,
+        height: DEPTH,
+        curveSegments: 12,
+        bevelEnabled: BEVEL,
+        bevelThickness: 0.04,
+        bevelSize: 0.03,
+        bevelOffset: 0,
+        bevelSegments: 5
+      });
+      geo.computeBoundingBox();
+      geo.center();
+
+      const mat = new THREE.MeshPhysicalMaterial({
+        color: new THREE.Color(TEXT_COLOR),
+        roughness: 0.35,
+        metalness: 0.0,
+        reflectivity: 0.35,
+        clearcoat: 0.3,
+        clearcoatRoughness: 0.4
+      });
+
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.castShadow = true;
+      scene.add(mesh);
+    });
+
+    // Handle resize
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Animate
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>
