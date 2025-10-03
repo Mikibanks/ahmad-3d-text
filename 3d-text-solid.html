@@ -24,7 +24,7 @@
     const SIZE        = parseFloat(p.get('size')  || '1.2');
     const DEPTH       = parseFloat(p.get('depth') || '0.30');
     const BEVEL       = (p.get('bevel') ?? 'true') === 'true';
-    const FONT_URL    = "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/fonts/helvetiker_regular.typeface.json";
+   const FONT_URL = "./helvetiker_regular.typeface.json";
 
     const msg = document.getElementById('msg');
     function say(t){ if(msg) msg.textContent = t; }
